@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+
+.git/
+.gitignore
+
+.vs/
+.idea/
+
+*.db
+*.db-shm
+*.db-wal
+
+TestResults/
+coverage/

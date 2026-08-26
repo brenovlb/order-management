@@ -3,13 +3,28 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using OrderManagement.Api.Authentication;
 using OrderManagement.Api.ExceptionHandling;
 using OrderManagement.Application;
 using OrderManagement.Infrastructure;
 using OrderManagement.Infrastructure.Persistence;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog((services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty(
+            "Application",
+            "OrderManagement.Api")
+        .WriteTo.Console();
+});
 
 builder.Services.AddApplication();
 
@@ -82,6 +97,20 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
+builder.Services
+    .AddOpenTelemetry()
+    .ConfigureResource(resource =>
+    {
+        resource.AddService("OrderManagement.Api");
+    })
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter();
+    });
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -99,6 +128,8 @@ using (IServiceScope scope =
 
     await dbContext.Database.MigrateAsync();
 }
+
+app.UseSerilogRequestLogging();
 
 app.UseExceptionHandler();
 
