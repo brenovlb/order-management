@@ -1,0 +1,36 @@
+using Microsoft.EntityFrameworkCore;
+using OrderManagement.Domain.Entities;
+
+namespace OrderManagement.Infrastructure.Persistence;
+
+public sealed class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<Order> Orders
+    {
+        get
+        {
+            return Set<Order>();
+        }
+    }
+
+    public DbSet<OrderItem> OrderItems
+    {
+        get
+        {
+            return Set<OrderItem>();
+        }
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(AppDbContext).Assembly);
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
